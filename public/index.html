@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Talk | Realtime Chat</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <aside class="sidebar">
+        <h1>Talk</h1>
+        <p class="subtitle">Discord-like messaging for the web</p>
+
+        <section>
+          <h2>Channels</h2>
+          <ul id="channelList"></ul>
+        </section>
+
+        <section>
+          <h2>Online</h2>
+          <p><span id="presenceCount">0</span> users connected</p>
+          <ul id="presenceUsers"></ul>
+        </section>
+      </aside>
+
+      <main class="chat-pane">
+        <header>
+          <h2 id="activeChannel">#general</h2>
+          <p id="activeUsername">connecting…</p>
+        </header>
+
+        <section class="messages-frame">
+          <section id="messageList" class="messages"></section>
+        </section>
+
+        <form id="messageForm" autocomplete="off">
+          <input id="messageInput" maxlength="500" placeholder="Message #general" required />
+          <button type="submit">Send</button>
+        </form>
+      </main>
+    </div>
+
+    <div id="toast" class="toast hidden"></div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

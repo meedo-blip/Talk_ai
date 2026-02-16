@@ -26,6 +26,7 @@ const presenceCount = document.getElementById('presenceCount');
 const presenceUsers = document.getElementById('presenceUsers');
 const toast = document.getElementById('toast');
 
+
 activeUsername.textContent = socket
   ? `Logged in as ${state.username}`
   : `Offline preview as ${state.username}`;
@@ -50,6 +51,7 @@ const renderChannels = () => {
     btn.textContent = `#${name}`;
     btn.addEventListener('click', () => {
       state.activeChannel = name;
+
       if (socket) socket.emit('channel:join', name);
       renderChannels();
       renderMessages();
@@ -101,64 +103,55 @@ const renderPresence = () => {
   });
 };
 
-if (socket) {
-  socket.on('bootstrap', (payload) => {
-    payload.channels.forEach((channel) => {
-      state.channels[channel.name] = channel;
-    });
-    renderChannels();
-    renderMessages();
-  });
 
-  socket.on('channel:history', (channel) => {
+socket.on('bootstrap', (payload) => {
+  payload.channels.forEach((channel) => {
     state.channels[channel.name] = channel;
-    renderChannels();
+  });
+  renderChannels();
+  renderMessages();
+});
+
+socket.on('channel:history', (channel) => {
+  state.channels[channel.name] = channel;
+  renderChannels();
+  renderMessages();
+});
+
+socket.on('message:new', (message) => {
+  const targetChannel = message.channel;
+  if (!state.channels[targetChannel]) {
+    state.channels[targetChannel] = { name: targetChannel, messages: [] };
+  }
+
+  state.channels[targetChannel].messages.push(message);
+  if (state.channels[targetChannel].messages.length > 100) {
+    state.channels[targetChannel].messages.shift();
+  }
+
+  if (targetChannel === state.activeChannel) {
     renderMessages();
-  });
+  }
+});
 
-  socket.on('message:new', (message) => {
-    const targetChannel = message.channel;
-    if (!state.channels[targetChannel]) {
-      state.channels[targetChannel] = { name: targetChannel, messages: [] };
-    }
+socket.on('presence:update', (payload) => {
+  state.users = payload.users;
+  renderPresence();
+});
 
-    state.channels[targetChannel].messages.push(message);
-    if (state.channels[targetChannel].messages.length > 100) {
-      state.channels[targetChannel].messages.shift();
-    }
-
-    if (targetChannel === state.activeChannel) {
-      renderMessages();
-    }
-  });
-
-  socket.on('presence:update', (payload) => {
-    state.users = payload.users;
-    renderPresence();
-  });
-
-  socket.on('toast', ({ message }) => {
-    showToast(message);
-  });
-}
-
-renderChannels();
-renderMessages();
-renderPresence();
+socket.on('toast', ({ message }) => {
+  showToast(message);
+});
 
 messageForm.addEventListener('submit', (event) => {
   event.preventDefault();
   const text = messageInput.value.trim();
   if (!text) return;
 
-  if (socket) {
-    socket.emit('message:send', {
-      channel: state.activeChannel,
-      text
-    });
-  } else {
-    showToast('Realtime server is unavailable in preview mode.');
-  }
+  socket.emit('message:send', {
+    channel: state.activeChannel,
+    text
+  });
 
   messageInput.value = '';
   messageInput.focus();

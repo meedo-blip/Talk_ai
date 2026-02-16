@@ -5,7 +5,9 @@ const username =
 
 window.localStorage.setItem('talk-username', username);
 
-const socket = io({ query: { username } });
+const socket = typeof window.io === 'function'
+  ? window.io({ query: { username } })
+  : null;
 
 const state = {
   username,
@@ -24,7 +26,10 @@ const presenceCount = document.getElementById('presenceCount');
 const presenceUsers = document.getElementById('presenceUsers');
 const toast = document.getElementById('toast');
 
-activeUsername.textContent = `Logged in as ${state.username}`;
+
+activeUsername.textContent = socket
+  ? `Logged in as ${state.username}`
+  : `Offline preview as ${state.username}`;
 
 const showToast = (message) => {
   toast.textContent = message;
@@ -46,7 +51,8 @@ const renderChannels = () => {
     btn.textContent = `#${name}`;
     btn.addEventListener('click', () => {
       state.activeChannel = name;
-      socket.emit('channel:join', name);
+
+      if (socket) socket.emit('channel:join', name);
       renderChannels();
       renderMessages();
       activeChannel.textContent = `#${name}`;
@@ -96,6 +102,7 @@ const renderPresence = () => {
     presenceUsers.appendChild(item);
   });
 };
+
 
 socket.on('bootstrap', (payload) => {
   payload.channels.forEach((channel) => {
